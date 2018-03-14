@@ -58,7 +58,7 @@ setup(
     keywords='C. elegans worm tracking',
     packages=['open_worm_analysis_toolbox'],
     install_requires=['atlas', 'nose', 'pandas', 'statsmodels',
-                      'h5py', 'seaborn']
+                      'h5py', 'seaborn','opencv-python']
     # Actually also requires openCV, numpy, scipy, matplotlib and numpy
     # but I don't want to force pip to install these here since pip is bad
     # at that for those packages.
