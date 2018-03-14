@@ -61,7 +61,7 @@ sudo /bin/cp travis_config.txt user_config.py
 # Please edit user_config.py to point to the correct folder below.
 mkdir ~/example_data
 cd ~/example_data
-wget "https://googledrive.com/host/0B7to9gBdZEyGNWtWUElWVzVxc0E/example_contour_and_skeleton_info.mat" -O example_contour_and_skeleton_info.mat
+wget "https://drive.google.com/uc?export=download&id=0B7to9gBdZEyGWVAzUlYwbk1ad0E" -O example_contour_and_skeleton_info.mat
 wget "https://drive.google.com/uc?export=download&id=0B7to9gBdZEyGX2tFQ1JyRzdUYUE" -O example_video_feature_file.mat
 wget "https://drive.google.com/uc?export=download&id=0B7to9gBdZEyGakg5U3loVUktRm8" -O example_video_norm_worm.mat
 chmod 777 *.mat
