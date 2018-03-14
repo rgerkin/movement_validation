@@ -1,4 +1,9 @@
 /.idea
 *.pyc
-__pycache__\*
-/movement_validation/user_config.py
+*.dat
+__pycache__/*
+/open_worm_analysis_toolbox/user_config.py
+build/*
+dist/*
+open_worm_analysis_toolbox.egg*
+.pypirc

@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Configuration file used for Travis-CI.  It is renamed to user_config.py by the CI script in .travis.yml
+
+"""
+EXAMPLE_DATA_PATH = '/home/travis/build/openworm/open-worm-analysis-toolbox/example_data'
+PERFORM_SLOW_ECCENTRICITY_CALC = True
+
