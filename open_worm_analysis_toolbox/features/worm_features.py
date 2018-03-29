@@ -33,7 +33,10 @@ import numpy as np
 import collections  # For namedtuple, OrderedDict
 import pandas as pd
 
+import wcon
 from .. import utils
+from ..prefeatures.basic_worm import BasicWorm
+from ..prefeatures.normalized_worm import NormalizedWorm
 
 from . import feature_processing_options as fpo
 from . import events
@@ -697,6 +700,9 @@ class WormFeatures(object):
         else:
             self._retrieve_all_features()
 
+    cache = {} # Cache for storing things that take a long-time to compute and should be shared
+               # across instances of the same class.
+
     def __iter__(self):
         """  Let's allow iteration over the features """
         all_features = self.features
@@ -744,45 +750,78 @@ class WormFeatures(object):
         return new_self
 
     @classmethod
-    def from_disk(cls, data_file_path):
+    def from_disk(cls, data_file_path, use_cache=True):
         """
         Creates an instance of the class from disk.
 
-        Ideally we would support loading of any file type. For now
-        we'll punt on building in any logic until we have more types to deal
-        with.
         """
-        # This ideally would allow us to load any file from disk.
-        #
-        # For now we'll punt on this logic
-        return cls._from_schafer_file(data_file_path)
+        
+        if use_cache and data_file_path in cls.cache:
+            print("Loading from cache...")
+            result = cls.cache[data_file_path]
+        else:
+            guess = 'wcon' if data_file_path.endswith('.wcon') else 'schafer'
+            kind = getattr(cls,'_format',guess)
+            if kind == 'schafer':
+                result = cls._from_schafer_file(data_file_path)
+            elif kind == 'wcon':
+                result = cls._from_wcon_file(data_file_path)
+            else:
+                raise NameError("No such worm file format '%s'" % kind)
+            cls.cache[data_file_path] = result
+        return result
 
     @classmethod
-    def _from_schafer_file(cls, data_file_path):
+    def _from_schafer_file(cls, data_file_path, method=2):
         """
         Load features from the Schafer lab feature (.mat) files.
         """
 
-        self = cls.__new__(cls)
-        self.timer = utils.ElementTimer()
-        self.initialize_features()
+        if method == 1: # Currently doesn't work and needs to be debugged
+            self = cls.__new__(cls)
+            self.timer = utils.ElementTimer()
+            self.initialize_features()
 
-        # I'm not thrilled about this approach. I think we should
-        # move the source specification into intialize_features
-        all_specs = self.specs
-        for key in all_specs:
-            spec = all_specs[key]
-            spec.source = 'mrc'
+            # I'm not thrilled about this approach. I think we should
+            # move the source specification into intialize_features
+            all_specs = self.specs
+            for key in all_specs:
+                spec = all_specs[key]
+                spec.source = 'mrc'
 
-        # Load file reference for getting files from disk
-        h = h5py.File(data_file_path, 'r')
-        worm = h['worm']
-        self.h = worm
+            # Load file reference for getting files from disk
+            h = h5py.File(data_file_path, 'r')
+            for key in ['worm','all_skeletons']:
+                try:
+                    worm = h[key]
+                except KeyError:
+                    pass
+                else:
+                    break
+            self.h = worm
 
-        # Retrieve all features
-        # Do we need to differentiate what we can and can not load?
-        self._retrieve_all_features()
+            # Retrieve all features
+            # Do we need to differentiate what we can and can not load?
+            self._retrieve_all_features()
+        if method == 2:
+            # Load a "basic" worm from a file
+            bw = BasicWorm.from_schafer_file_factory(data_file_path)
+            # Normalize the basic worm
+            nw = NormalizedWorm.from_BasicWorm_factory(bw)
+            # Compute the features
+            self = cls(nw)
+            
+        return self
 
+    @classmethod
+    def _from_wcon_file(cls, data_file_path):
+        """
+        Load a WCON file and compute features.
+        """
+
+        bw = BasicWorm.from_wcon_file_factory(data_file_path)
+        nw = NormalizedWorm.from_BasicWorm_factory(bw)
+        self = cls(nw)
         return self
 
     @property

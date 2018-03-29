@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 import json
 from collections import namedtuple, Iterable, OrderedDict
 
+import wcon
 from .. import config, utils
 from .pre_features import WormParsing
 from .video_info import VideoInfo
@@ -205,6 +206,9 @@ class BasicWorm(JSON_Serializer):
             for a in attributes:
                 setattr(self, a, copy.deepcopy(getattr(other, a)))
 
+    cache = {} # Cache for storing things that take a long-time to compute and should be shared
+               # across instances of the same class.
+
     @classmethod
     def from_schafer_file_factory(cls, data_file_path):
         bw = cls()
@@ -260,6 +264,39 @@ class BasicWorm(JSON_Serializer):
         bw._h_ventral_contour = all_ventral_contours
         bw._h_dorsal_contour = dorsal_contour
 
+        return bw
+
+    @classmethod
+    def from_wcon_file_factory(cls, data_file_path, use_cache=True):
+        """A function to convert a WCON file with skeleton data into the corresponding owat.BasicWorm.
+        Input: `data_file_path` - A WCON file
+        Output: A `BasicWorm` object 
+        """
+        
+        if use_cache and data_file_path in cls.cache:
+            print("Loading from cache...")
+            wcon_data = cls.cache[data_file_path]
+        else:
+            wcon_data = wcon.WCONWorms.load_from_file(data_file_path)
+            cls.cache[data_file_path] = wcon_data
+        return cls.from_wcon_data(wcon_data)
+
+    @classmethod
+    def from_wcon_data(cls, wcon_data):
+        """A function to convert the a WCON object with skeleton data into the 
+        corresponding owat.BasicWorm.
+        Input: `wcon_data` - A WCON object
+        Output: A `BasicWorm` object 
+        """
+        bw = cls()
+        data = wcon_data.data
+        worm_name = data.columns.levels[0][0]
+        skeleton_data = [data[worm_name].iloc[frame].unstack().iloc[1:].values \
+                        for frame in range(data.shape[0])]
+        if skeleton_data[0].shape[0]==4:
+            skeleton_data = [x[2:,:] for x in skeleton_data]
+        skeleton_data = [x.astype('float') for x in skeleton_data]
+        bw._h_skeleton = skeleton_data
         return bw
 
     @classmethod
