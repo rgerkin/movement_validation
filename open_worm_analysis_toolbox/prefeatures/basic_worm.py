@@ -295,7 +295,7 @@ class BasicWorm(JSON_Serializer):
                         for frame in range(data.shape[0])]
         if skeleton_data[0].shape[0]==4:
             skeleton_data = [x[2:,:] for x in skeleton_data]
-        skeleton_data = [x.astype('float') for x in skeleton_data]
+        skeleton_data = [x.astype('float')*1000 for x in skeleton_data]
         bw._h_skeleton = skeleton_data
         return bw
 
